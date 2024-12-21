@@ -1,0 +1,117 @@
+using System;
+using System.Text;
+
+class BaseConversion
+{
+    static void Main(string[] args)
+    {
+        Console.WriteLine("Introduceti baza sursa (b1, intre 2 si 16):");
+        int b1 = int.Parse(Console.ReadLine());
+        
+        Console.WriteLine("Introduceti baza destinatie (b2, intre 2 si 16):");
+        int b2 = int.Parse(Console.ReadLine());
+        
+        Console.WriteLine("Introduceti numarul in baza b1 (cu virgula fixa, folosind '.' pentru zecimale):");
+        string number = Console.ReadLine();
+
+        try
+        {
+            string result = ConvertBase(number, b1, b2);
+            Console.WriteLine($"Numarul {number} din baza {b1} este {result} in baza {b2}.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Eroare: {ex.Message}");
+        }
+    }
+
+    static string ConvertBase(string number, int b1, int b2)
+    {
+        if (b1 < 2 || b1 > 16 || b2 < 2 || b2 > 16)
+            throw new ArgumentException("Bazele trebuie sa fie intre 2 si 16.");
+
+        string[] parts = number.Split('.');
+        string integerPart = parts[0];
+        string fractionalPart = parts.Length > 1 ? parts[1] : "";
+
+        // Convertim partea intreaga in baza 10
+        long integerBase10 = ConvertToBase10(integerPart, b1);
+
+        // Convertim partea fractionara in baza 10
+        double fractionalBase10 = ConvertFractionToBase10(fractionalPart, b1);
+
+        // Convertim partea intreaga din baza 10 in baza b2
+        string integerResult = ConvertFromBase10((long)integerBase10, b2);
+
+        // Convertim partea fractionara din baza 10 in baza b2
+        string fractionalResult = ConvertFractionFromBase10(fractionalBase10, b2);
+
+        return fractionalResult.Length > 0 ? $"{integerResult}.{fractionalResult}" : integerResult;
+    }
+
+    static long ConvertToBase10(string number, int baseFrom)
+    {
+        long result = 0;
+        foreach (char digit in number)
+        {
+            result = result * baseFrom + CharToValue(digit);
+        }
+        return result;
+    }
+
+    static double ConvertFractionToBase10(string fractionalPart, int baseFrom)
+    {
+        double result = 0;
+        double factor = 1.0 / baseFrom;
+        foreach (char digit in fractionalPart)
+        {
+            result += CharToValue(digit) * factor;
+            factor /= baseFrom;
+        }
+        return result;
+    }
+
+    static string ConvertFromBase10(long number, int baseTo)
+    {
+        if (number == 0) return "0";
+
+        StringBuilder result = new StringBuilder();
+        while (number > 0)
+        {
+            result.Insert(0, ValueToChar((int)(number % baseTo)));
+            number /= baseTo;
+        }
+        return result.ToString();
+    }
+
+    static string ConvertFractionFromBase10(double fractionalPart, int baseTo)
+    {
+        StringBuilder result = new StringBuilder();
+        int maxPrecision = 10; // Limitam precizia pentru a evita loop-uri infinite
+
+        while (fractionalPart > 0 && maxPrecision-- > 0)
+        {
+            fractionalPart *= baseTo;
+            int integerPart = (int)fractionalPart;
+            result.Append(ValueToChar(integerPart));
+            fractionalPart -= integerPart;
+        }
+
+        return result.ToString();
+    }
+
+    static int CharToValue(char c)
+    {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        throw new ArgumentException("Caractere invalide in numar.");
+    }
+
+    static char ValueToChar(int value)
+    {
+        if (value >= 0 && value <= 9) return (char)('0' + value);
+        if (value >= 10 && value <= 15) return (char)('A' + value - 10);
+        throw new ArgumentException("Valoare invalida pentru conversie.");
+    }
+}
